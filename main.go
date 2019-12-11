@@ -36,10 +36,6 @@ type Event struct {
   } `json:"payload"`
 }
 
-type Repository struct {
-  Name string `json:"name"`
-}
-
 func main() {
   var username string = parseArgs()
   bytes, err := fetchEvents(username)
