@@ -1,6 +1,7 @@
 package main
 
 import (
+  "encoding/json"
   "fmt"
   "flag"
   "log"
@@ -8,15 +9,53 @@ import (
   "io/ioutil"
 )
 
+type Color struct {
+  Green string
+  Red string
+  End string
+}
+
+var color Color = Color{"\x1b[32;1m", "\x1b[31;1m", "\x1b[m"}
+
+type Issue struct {
+  Title string `json:"title"`
+  UpdatedAt string `json:"updated_at"`
+}
+
+type PullRequest struct {
+  Title string `json:"title"`
+  UpdatedAt string `json:"updated_at"`
+}
+
+type Event struct {
+  EventType string `json:"type"`
+  Payload struct {
+    Action string `json:"action"`
+    Issue Issue `json:"issue"`
+    PullRequest PullRequest `json:"pull_request"`
+  } `json:"payload"`
+}
+
+type Repository struct {
+  Name string `json:"name"`
+}
+
 func main() {
   var username string = parseArgs()
-  fmt.Println("Hello notifissue.")
-  printIssues([]string{"hoge", "poyo"})
-  body, err := fetchUserInfo(username)
+  bytes, err := fetchEvents(username)
   if err != nil {
     log.Fatal(err)
   }
-  fmt.Println(string(body))
+
+  var events []Event
+  if err := json.Unmarshal(bytes, &events); err != nil {
+    log.Fatal(err)
+  }
+
+  fmt.Print("Recent activities\n\n")
+  printLine()
+  printEvents(events)
+  printLine()
 }
 
 func parseArgs() string {
@@ -25,31 +64,62 @@ func parseArgs() string {
   return *username
 }
 
-func printIssues(issues []string) {
-  for _, issue := range issues {
-    fmt.Println(issue)
+func printLine() {
+  fmt.Println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
+}
+
+func printEvents(events []Event) {
+  for _, event := range events {
+    switch event.EventType {
+    case "IssuesEvent": printIssue(event)
+    case "PullRequestEvent": printPullRequest(event)
+    }
   }
 }
 
-func fetchUserInfo(username string) (body string, err error) {
-  var url string = "https://api.github.com/users/" + username
-  return fetch(url)
+func printIssue(event Event) {
+  var action string
+  if event.Payload.Action == "opened" {
+    action = color.Green + event.Payload.Action + color.End
+  } else if event.Payload.Action == "closed" {
+    action = color.Red + event.Payload.Action + color.End
+  }
+  fmt.Printf(
+    "+ updated at %s %s %s: %s\n",
+    event.Payload.Issue.UpdatedAt,
+    action,
+    event.EventType,
+    event.Payload.Issue.Title,
+  )
 }
 
-func fetch(url string) (body string, err error) {
-  var resp *http.Response
-  resp, err = http.Get(url)
+func printPullRequest(event Event) {
+  var action string
+  if event.Payload.Action == "opened" {
+    action = color.Green + event.Payload.Action + color.End
+  } else if event.Payload.Action == "closed" {
+    action = color.Red + event.Payload.Action + color.End
+  }
+  fmt.Printf(
+    "+ updated at %s %s %s:  %s\n",
+    event.Payload.PullRequest.UpdatedAt,
+    action,
+    event.EventType,
+    event.Payload.PullRequest.Title,
+  )
+}
+
+func fetch(url string) ([]byte, error) {
+  resp, err := http.Get(url)
   if err != nil {
     log.Fatal(err)
   }
   defer resp.Body.Close()
 
-  var bytes []byte
-  bytes, err = ioutil.ReadAll(resp.Body)
-  if err != nil {
-    log.Fatal(err)
-  }
+  return ioutil.ReadAll(resp.Body)
+}
 
-  body = string(bytes)
-  return body, err
+func fetchEvents(username string) (bytes []byte, err error) {
+  var url string = "https://api.github.com/users/" + username + "/events/public"
+  return fetch(url)
 }
