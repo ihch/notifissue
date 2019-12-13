@@ -15,6 +15,7 @@ add `config.fish` or any config file.
 ```
 # notifissue
 set -x NOTIFISSUE_PATH "YOUR_NOTIFISSUE_PATH"
+# set -x NOTIFISSUE_PATH "/(home|Users)/YOUR_NAME/.go/bin/notifissue
 set -x NOTIFISSUE_USERNAME "nemusou"
 function _notifissue
   for i in ($NOTIFISSUE_PATH -u=$NOTIFISSUE_USERNAME)
