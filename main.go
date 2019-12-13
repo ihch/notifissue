@@ -115,7 +115,7 @@ func fetch(url string) ([]byte, error) {
   return ioutil.ReadAll(resp.Body)
 }
 
-func fetchEvents(username string) (bytes []byte, err error) {
+func fetchEvents(username string) ([]byte, error) {
   var url string = "https://api.github.com/users/" + username + "/events/public"
   return fetch(url)
 }
