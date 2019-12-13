@@ -1,4 +1,6 @@
 # notifissue
+指定したユーザーの直近のissue, pullreqのアクティビティを取得します.  
+shellの起動時に呼ばれるようにしておくと必ずチェックできていいと思います.  
 
 ![notifissue run](https://user-images.githubusercontent.com/18340344/70629082-b3fd7780-1c6c-11ea-9b2b-f6773e8a2844.png)
 
